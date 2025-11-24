@@ -630,15 +630,7 @@ with gr.Blocks(title="CANF Report Automation") as demo:
     5. Download the output file using one of these methods:
 
     **Download Options (when using share=False):**
-    - **Gradio Download Button**: Click the download button in the "Download Output File" section
-    - **Colab Files Download Button**: After processing, a "Download via Colab Files" button will appear - click it to trigger automatic download
     - **Colab File Browser**: Navigate to `/content/Not pre-calculated ETOFs.xlsx` in the Colab file browser (left sidebar) and right-click to download
-    - **Programmatic Download**: Run this in a new cell after processing:
-      ```python
-      from google.colab import files
-      files.download("/content/Not pre-calculated ETOFs.xlsx")
-      ```
-
     **Note:** The CDP Header Row and End Column inputs will only appear when a CDP file is uploaded.
     """)
 
@@ -671,3 +663,4 @@ if __name__ == "__main__":
         print("🚀 Launching Gradio interface locally...")
         print("💡 Output files will be saved to: ./output/")
         demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+
