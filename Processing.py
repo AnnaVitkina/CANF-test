@@ -198,7 +198,7 @@ def process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp
 
         # Drop the temporary merged DataFrame if no longer needed
                 del df_etofs_merged
-        
+
         # Process rate card - find first column index
         first_column_index = None
         if df_rate_card is not None:
@@ -419,7 +419,7 @@ def process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp
                         if disc['column'] == 'Loading date' and "Not within" in str(disc['rate_card_value']):
                             comments_for_current_etofs_row.append("  - Shipment date is not within validity range.")
                         else:
-                            comments_for_current_etofs_row.append(f"  - {disc['column']}: Shipemnt value '{disc['etofs_value']}' needs to be changed to '{disc['rate_card_value']}'")
+                            comments_for_current_etofs_row.append(f"  - {disc['column']}: Shipment value '{disc['etofs_value']}' needs to be changed to '{disc['rate_card_value']}'")
 
             if comments_for_current_etofs_row:
                 df_etofs.loc[index_etofs, 'Comments'] = '\n'.join(comments_for_current_etofs_row)
@@ -548,7 +548,9 @@ def process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp
         status_msg += f"📈 Unique causes: {len(pivot_data)}\n"
         if cdp_file is not None:
             status_msg += f"📋 CDP file processed: Yes\n"
-        status_msg += f"\n💡 The file is ready for download below!"
+        status_msg += f"\n💡 **Download the file:**\n"
+        status_msg += f"   - Use the download button above, or\n"
+        status_msg += f"   - Navigate to /content/Not pre-calculated ETOFs.xlsx in Colab file browser and right-click to download"
 
         # Verify file exists before returning
         if not os.path.exists(output_filename):
@@ -616,47 +618,22 @@ with gr.Blocks(title="CANF Report Automation") as demo:
 
     with gr.Row():
         with gr.Column():
-            output_file = gr.File(label="📥 Download Output File (Gradio)")
-            download_btn = gr.Button("📥 Download via Colab Files", variant="secondary", visible=False)
+            output_file = gr.File(label="📥 Download Output File")
         with gr.Column():
-            status_output = gr.Textbox(label="📊 Status", lines=10, interactive=False)
+            status_output = gr.Textbox(label="📊 Status", lines=12, interactive=False)
 
-    # Store the output file path for the download button
-    output_file_path = gr.State(value=None)
-    #output_file_path = "/content/Not pre-calculated ETOFs.xlsx"
-
-    def process_and_store(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp_end_column, stored_path):
-        """Process files and store the output path."""
+    def process_and_store(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp_end_column):
+        """Process files and return the output."""
         file_path, status = process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp_end_column)
         if file_path:
-            return file_path, status, gr.update(visible=True), file_path
+            return file_path, status
         else:
-            return file_path, status, gr.update(visible=False), stored_path
-
-    def download_via_colab(file_path):
-        """Download file using google.colab.files.download()"""
-        if file_path and os.path.exists(file_path):
-            try:
-                from google.colab import files
-                files.download(file_path)
-                return "✅ File downloaded successfully via Colab!"
-            except ImportError:
-                return "❌ Error: Not running in Google Colab. Use the Gradio download button instead."
-            except Exception as e:
-                return f"❌ Error downloading: {str(e)}"
-        else:
-            return "❌ Error: File not found. Please process the report first."
+            return None, status
 
     process_btn.click(
         fn=process_and_store,
-        inputs=[etof_input, rate_card_input, cdp_input, cdp_header_input, cdp_end_col_input, output_file_path],
-        outputs=[output_file, status_output, download_btn, output_file_path]
-    )
-
-    download_btn.click(
-        fn=download_via_colab,
-        inputs=[output_file_path],
-        outputs=[status_output]
+        inputs=[etof_input, rate_card_input, cdp_input, cdp_header_input, cdp_end_col_input],
+        outputs=[output_file, status_output]
     )
 
     gr.Markdown("### 📖 Instructions")
@@ -667,10 +644,17 @@ with gr.Blocks(title="CANF Report Automation") as demo:
        - Header Row: The row number where column headers start
        - End Column: The last column number to include
     4. Click **"Process Report"** button
-    5. Download the output file using one of these methods:
+    5. Download the output file:
 
-    **Download Options (when using share=False):**
+    **Download Options:**
+    - **Gradio Download Button**: Click the download button in the "Download Output File" section above
     - **Colab File Browser**: Navigate to `/content/Not pre-calculated ETOFs.xlsx` in the Colab file browser (left sidebar) and right-click to download
+    - **Programmatic Download**: Run this in a new cell after processing:
+      ```python
+      from google.colab import files
+      files.download("/content/Not pre-calculated ETOFs.xlsx")
+      ```
+
     **Note:** The CDP Header Row and End Column inputs will only appear when a CDP file is uploaded.
     """)
 
@@ -703,5 +687,3 @@ if __name__ == "__main__":
         print("🚀 Launching Gradio interface locally...")
         print("💡 Output files will be saved to: ./output/")
         demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
-
-
