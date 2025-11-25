@@ -159,6 +159,46 @@ def process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp
         # Load Rate Card file
         df_rate_card = pd.read_excel(rate_card_path, sheet_name="Rate card", skiprows=2)
 
+        if cdp_file and df_cdp is not None:
+            #Rename duplicate columns
+            cols = df_cdp.columns.tolist()
+            #print(cols)
+            new_column_names = {
+            'SHAI Reference': 'SHIPMENT_ID',
+            'Origin Airport Code': 'Origin airport',
+            'Destination Airport Code': 'Destination airport'
+              }
+
+            df_cdp = df_cdp.rename(columns=new_column_names, inplace=False)
+
+            df_cdp = df_cdp[['SHIPMENT_ID', 'Origin airport', 'Destination airport']]
+
+            # Check if df_etofs and df_cdp are available
+            if df_etofs is not None and df_cdp is not None:
+        # Ensure SHIPMENT_ID is string type in both dataframes for consistent merging
+        #df_etofs['SHIPMENT_ID'] = df_etofs['SHIPMENT_ID'].astype(str)
+        #df_cdp['SHIPMENT_ID'] = df_cdp['SHIPMENT_ID'].astype(str)
+
+        # Merge df_etofs with df_cdp to get the airport information
+        # We'll use a left merge to keep all rows from df_etofs
+                df_etofs_merged = pd.merge(
+                    df_etofs,
+                    df_cdp[['SHIPMENT_ID', 'Origin airport', 'Destination airport']],
+                    on='SHIPMENT_ID',
+                    how='left',
+                    suffixes=('', '_cdp') # Suffixes to differentiate columns from df_cdp
+                  )
+
+        # Fill NaN values in 'Origin airport' and 'Destination airport' in df_etofs
+        # Only update if the df_etofs_merged has the cdp columns
+                if 'Origin airport_cdp' in df_etofs_merged.columns:
+                    df_etofs['Origin airport'] = df_etofs_merged['Origin airport'].fillna(df_etofs_merged['Origin airport_cdp'])
+                if 'Destination airport_cdp' in df_etofs_merged.columns:
+                    df_etofs['Destination airport'] = df_etofs_merged['Destination airport'].fillna(df_etofs_merged['Destination airport_cdp'])
+
+        # Drop the temporary merged DataFrame if no longer needed
+                del df_etofs_merged
+        
         # Process rate card - find first column index
         first_column_index = None
         if df_rate_card is not None:
@@ -663,4 +703,5 @@ if __name__ == "__main__":
         print("🚀 Launching Gradio interface locally...")
         print("💡 Output files will be saved to: ./output/")
         demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+
 
