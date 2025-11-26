@@ -162,9 +162,10 @@ def process_canf_report(etof_file, rate_card_file, cdp_file, cdp_header_row, cdp
         if cdp_file and df_cdp is not None:
             #Rename duplicate columns
             required_columns = ['SHAI Reference', 'Origin Airport Code', 'Destination Airport Code']
-
+            cols = df_cdp.columns.tolist()
+            
             if all(col in cols for col in required_columns):
-                cols = df_cdp.columns.tolist()
+                
                 #print(cols)
                 new_column_names = {
                 'SHAI Reference': 'SHIPMENT_ID',
@@ -690,4 +691,5 @@ if __name__ == "__main__":
         print("🚀 Launching Gradio interface locally...")
         print("💡 Output files will be saved to: ./output/")
         demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+
 
